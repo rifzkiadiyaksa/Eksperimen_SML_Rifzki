@@ -55,7 +55,7 @@ def preprocess_data(filepath):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python automate_rifzki.py <input_csv_path> <output_csv_path>")
+        print("Usage: python automate_Rifdah-siswa.py <input_csv_path> <output_csv_path>")
         sys.exit(1)
 
     input_path = sys.argv[1]
