@@ -1,31 +1,35 @@
-name: 1. Preprocessing Workflow
+name: Preprocessing Workflow
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'survey_lung_cancer_raw.csv'
-      - 'preprocessing/automate_Rifzki.py'
-      - '.github/workflows/preprocessing.yml'
+on: [push]
 
 jobs:
-  preprocess-data:
+  build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas scikit-learn joblib
+        run: pip install pandas scikit-learn joblib
 
-      # Menjalankan skrip dari root direktori
-      - name: Run preprocessing script
+      - name: Run your preprocessing script
+       
         run: python preprocessing/automate_Rifzki.py
+
+      - name: Commit and push changes
+      
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'actions@github.com'
+          git add .
+          git commit -m "preprocess"
+          git push
