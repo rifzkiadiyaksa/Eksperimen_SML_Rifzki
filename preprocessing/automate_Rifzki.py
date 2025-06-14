@@ -1,71 +1,71 @@
 import pandas as pd
-import re
-import sys
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+import joblib
 import os
 
-def clean_column_names(df):
-    cleaned_columns = []
-    for col in df.columns:
-        cleaned_col = col.strip()
-        cleaned_col = re.sub(r'[\s\-]+', '_', cleaned_col)
-        cleaned_col = re.sub(r'[^\w]', '', cleaned_col)
-        cleaned_col = cleaned_col.lower()
-        cleaned_columns.append(cleaned_col)
-    df.columns = cleaned_columns
-    return df
+def preprocess_data(input_path, output_dir):
+    """
+    Fungsi untuk memuat, memproses, dan menyimpan data.
+    """
+    # Pastikan direktori output ada (dalam kasus ini, direktori saat ini)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-def drop_duplicates(df):
-    return df.drop_duplicates()
+    # 1. Memuat Data
+    try:
+        # Path disesuaikan untuk membaca dari root direktori proyek
+        full_input_path = os.path.join('..', input_path)
+        df = pd.read_csv(full_input_path)
+        print(f"Data berhasil dimuat dari {full_input_path}")
+    except FileNotFoundError:
+        print(f"Error: File tidak ditemukan di {full_input_path}")
+        return
 
-def map_gender(df, col_name='gender'):
-    if col_name in df.columns:
-        df[col_name] = df[col_name].map({'M': 0, 'F': 1}).fillna(-1).astype(int)
-    return df
+    # 2. Encoding Data Kategorikal
+    df['GENDER'] = df['GENDER'].replace({'M': 1, 'F': 0})
+    df['LUNG_CANCER'] = df['LUNG_CANCER'].replace({'YES': 1, 'NO': 0})
+    print("Encoding data kategorikal selesai.")
 
-def map_lung_cancer(df, col_name='lung_cancer'):
-    if col_name in df.columns:
-        df[col_name] = df[col_name].map({'YES': 1, 'NO': 0}).fillna(-1).astype(int)
-    return df
+    # 3. Memisahkan Fitur dan Target
+    X = df.drop('LUNG_CANCER', axis=1)
+    y = df['LUNG_CANCER']
 
-def map_binary_columns(df, binary_columns):
-    existing_cols = [col for col in binary_columns if col in df.columns]
-    df[existing_cols] = df[existing_cols].replace({1: 0, 2: 1})
-    return df
+    # 4. Pembagian Data (Splitting)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    print("Pembagian data menjadi train dan test set selesai.")
 
-def preprocess_data(filepath):
-    df = pd.read_csv(filepath)
-    df = clean_column_names(df)
-    df = drop_duplicates(df)
-    df = map_gender(df)
-    df = map_lung_cancer(df)
+    # 5. Normalisasi Fitur
+    scaler = MinMaxScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-    binary_cols = ['smoking', 'yellow_fingers', 'anxiety', 'peer_pressure',
-                   'chronic_disease', 'fatigue', 'allergy', 'wheezing',
-                   'alcohol_consuming', 'coughing', 'shortness_of_breath',
-                   'swallowing_difficulty', 'chest_pain']
-    df = map_binary_columns(df, binary_cols)
+    # Mengubah kembali ke DataFrame
+    X_train_scaled = pd.DataFrame(X_train_scaled, columns=X.columns)
+    X_test_scaled = pd.DataFrame(X_test_scaled, columns=X.columns)
+    print("Normalisasi data selesai.")
 
-    target_column = 'lung_cancer'
-    feature_columns = [col for col in df.columns if col != target_column]
+    # 6. Menyimpan Hasil Preprocessing
+    train_data = pd.concat([X_train_scaled, y_train.reset_index(drop=True)], axis=1)
+    test_data = pd.concat([X_test_scaled, y_test.reset_index(drop=True)], axis=1)
+    
+    # Path output disesuaikan untuk menyimpan di direktori saat ini (preprocessing/)
+    train_output_path = os.path.join(output_dir, 'lung_cancer_train_preprocessed.csv')
+    test_output_path = os.path.join(output_dir, 'lung_cancer_test_preprocessed.csv')
+    scaler_output_path = os.path.join(output_dir, 'scaler.joblib')
 
-    X = df[feature_columns]
-    y = df[target_column]
+    train_data.to_csv(train_output_path, index=False)
+    test_data.to_csv(test_output_path, index=False)
+    joblib.dump(scaler, scaler_output_path)
+    
+    print(f"Data yang telah diproses disimpan di direktori: {output_dir}")
 
-    return X, y, df
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python automate_rifzki.py <input_csv_path> <output_csv_path>")
-        sys.exit(1)
-
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
-
-    X, y, df_cleaned = preprocess_data(input_path)
-
-    # Buat folder output jika belum ada
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    # Simpan dataframe hasil preprocessing lengkap ke CSV
-    df_cleaned.to_csv(output_path, index=False)
-    print(f"Preprocessing selesai, file disimpan di {output_path}")
+if __name__ == '__main__':
+    # File raw data berada di root, satu level di atas skrip ini
+    input_file_name = 'survey_lung_cancer_raw.csv'
+    # Direktori output adalah direktori saat ini tempat skrip dijalankan
+    output_directory = '.' 
+    
+    preprocess_data(input_file_name, output_directory)
