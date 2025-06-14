@@ -29,12 +29,3 @@ jobs:
       # Menjalankan skrip dari root direktori
       - name: Run preprocessing script
         run: python preprocessing/automate_Rifzki.py
-
-      # Commit dan push hasil preprocessing dari folder preprocessing
-      - name: Commit and push preprocessed files
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add preprocessing/
-          git commit -m "Automated preprocessing by GitHub Actions" || echo "No changes to commit"
-          git push
