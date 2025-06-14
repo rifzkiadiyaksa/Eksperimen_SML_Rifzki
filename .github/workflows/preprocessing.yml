@@ -1,35 +1,37 @@
-name: Preprocessing Workflow
+name: Data Preprocessing
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'survey_lung_cancer_raw.csv'
+      - 'preprocessing/automate_Rifzki.py'
+      - '.github/workflows/preprocessing.yml'
 
 jobs:
-  build:
+  preprocess:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install pandas scikit-learn joblib
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas scikit-learn joblib # Menambahkan scikit-learn dan joblib
 
-      - name: Run your preprocessing script
-       
-        run: python preprocessing/automate_Rifzki.py
+    - name: Run preprocessing script
+      run: |
+        # Menjalankan skrip dengan argumen input dan output
+        python preprocessing/automate_Rifzki.py survey_lung_cancer_raw.csv preprocessing/lung_cancer_clean.csv
 
-      - name: Commit and push changes
-      
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'actions@github.com'
-          git add .
-          git commit -m "preprocess"
-          git push
+    - name: Upload preprocessed dataset as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: clean-dataset
+        path: preprocessing/lung_cancer_clean.csv
