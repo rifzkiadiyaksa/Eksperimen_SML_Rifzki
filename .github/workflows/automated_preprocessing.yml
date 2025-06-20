@@ -1,0 +1,37 @@
+name: Automated Data Preprocessing for Eksperimen_SML_Rifzki
+
+on:
+  push:
+    branches:
+      - main # Asumsi branch utama adalah 'main'. Jika berbeda, sesuaikan.
+  workflow_dispatch: # Memungkinkan eksekusi manual
+
+jobs:
+  preprocess_data:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python Environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9' # Menyesuaikan dengan asumsi versi Python yang umum digunakan
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas scikit-learn # Asumsi library yang digunakan di automate_Rifzki.py
+
+    - name: Run Data Preprocessing Script
+      run: |
+        python preprocessing/automate_Rifzki.py
+
+    - name: Verify and Commit Preprocessed Data
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add preprocessing/car_df_preprocessing.csv
+        git commit -m "Automated: Update preprocessed data from workflow" || echo "No changes to commit"
+        git push || echo "No changes to push"
